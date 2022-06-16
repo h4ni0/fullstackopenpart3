@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/h4ni0/fullstackopenpart3#readme",
   "devDependencies": {
+    "eslint": "^8.17.0",
     "nodemon": "^2.0.16"
   },
   "dependencies": {
