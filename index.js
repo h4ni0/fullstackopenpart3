@@ -1,7 +1,8 @@
 const express = require("express")
 const cors = require("cors")
-const app = express()
 const morgan = require("morgan")
+const Person = require("./models/person")
+const app = express()
 
 
 app.use(express.json())
@@ -23,68 +24,66 @@ app.use(morgan(function (tokens, req, res) {
 
 
 
-persons = [
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
 // get requests
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(result => {
+        res.json(result)
+    })
 })
 
+
+
 app.get('/info', (req, res) => {
-    res.send(`
-    <p>Phonebook has info for ${persons.length} people</p>
+    let count = 0
+    Person.find({}).then(result => {res.send(`
+    <p>Phonebook has info for ${ result.length } people</p>
     <p>${new Date()}</p>
-    `)
+    `) })
+    
 })
 
 app.get('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    const person = persons.find(person => person.id === id)
-    if (person) { 
-        res.json(person)
-    } else {
-        res.status(404).json({
-            error: "Person not found"
-        })
-    }
+    Person.findById(req.params.id)
+    .then(foundPerson => {
+        if (foundPerson) {
+            res.json(foundPerson)
+        } else {
+            res.status(404).end()
+        }
+    }).catch(error => {
+      console.log(error)
+      res.status(400).send({erro: "malformatted id"})
+    })
 })
+
 
 // delete request
 app.delete('/api/persons/:id', (req, res) => {
-    const id = Number(req.params.id)
-    persons = persons.filter(person => person.id !== id)
-    res.status(204).end()
+    console.log(req.params)
+    Person.findByIdAndRemove(req.params.id)
+    .then(foundPerson => {
+        console.log('success')
+        res.status(204).end()
+    })
+    .catch(err => {
+        res.status(404).end(err)
+    })
+    
 })
 
 // post requests
 app.post('/api/persons', (req, res) => {
-    const person = req.body
+    const body = req.body
 
-    if (req.body.name && req.body.number && !persons.find(person => person.name === req.body.name)) {
-        person.id = Math.ceil(Math.random() * 99999999999)
-        persons = persons.concat(person)
-        res.json(person)
+    if (req.body.name && req.body.number) {
+        person = new Person({
+            name: body.name,
+            number: body.number
+        })
+        person.save().then(result => {
+
+            res.json(person)    
+        })
     } else {
         res.status(400)
         if (!req.body.name) {
